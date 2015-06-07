@@ -1,5 +1,5 @@
 Vagrant.configure(2) do |config|
-  config.vm.box = 'chef/centos-7.0'
+  config.vm.box = 'chef/centos-7.1'
 
   config.vm.hostname = 'riak'
   config.vm.network :private_network, ip: '192.168.33.10'
@@ -10,15 +10,24 @@ Vagrant.configure(2) do |config|
 
   config.cache.scope = :box if Vagrant.has_plugin?('vagrant-cachier')
 
-  config.omnibus.chef_version = '11.18.0'
+  config.vm.provision :shell, inline: 'nmcli connection reload;systemctl restart network.service'
+
   config.vm.provision :chef_solo do |chef|
     chef.cookbooks_path = %w(cookbooks site-cookbooks)
 
+    chef.add_recipe 'java'
     chef.add_recipe 'datastore::riak'
     chef.json = {
-      'riak' => {
-        'config' => {
-          'nodename' => 'riak@192.168.33.10'
+      "java" => {
+        "install_flavor" => "oracle",
+        "jdk_version" => "7",
+        "oracle" => {
+          "accept_oracle_download_terms" => true
+        }
+      },
+      "riak" => {
+        "config" => {
+          "nodename" => "riak@192.168.33.10"
         }
       }
     }
